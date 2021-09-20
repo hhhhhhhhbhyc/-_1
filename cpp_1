@@ -1,0 +1,274 @@
+#include <iostream>
+#include <string>
+#include <set>
+#include <vector>
+using namespace std;
+
+vector<string> int_table;//标识符表
+vector<string> num_table;//常量表
+vector<string> rev_table;//保留字表
+vector<string> cal_table;//运输符表
+vector<string> div_table;//分隔符表
+
+string reserve[]={
+	//保留字
+	"void", "int", "char", "float", "double", "bool","long", "short", "singed", "unsigned",
+	"true", "false","const", "inline","auto", "static", "extern", "register","for", "while", "if", "else","do",
+	"switch", "case", "default","break", "continue", "return", "goto","new", "delete",
+	"sizeof","class", "struct", "enum", "union", "typedef","this", "friend", "irtual", "mutable", "explicit", "operator",
+	"private", "protected", "public","template", "typename","namespace","using","catch", "throw", "try", "export", "typeid", "volatile"
+
+};
+
+
+bool retrcat(string str){
+	//是否是保留字
+	for (int i =0 ; i<57;i++){
+		if (str == reserve[i]){
+			return true;
+		}
+	}
+    return false;
+}
+
+
+string pre(){
+	//编译预处理
+	FILE *fp;
+	fp=fopen("C:\\Users\\86138\\Desktop\\abc.txt","r");
+	string preword;
+	while(!feof(fp))
+	{	
+		char ch=(char)fgetc(fp) ;
+
+		if (ch != '\r' && ch !='\n' && ch !='\t'){
+			preword+=ch;
+		}else {preword+=" ";}
+	}
+	//cout<<preword;
+	fclose(fp);
+	return preword;
+}
+
+
+
+void main(){
+	string realT;
+	//编译预处理
+    realT=pre();
+	int len = realT.length();
+
+	//<!-----开始词法分析------->
+	for (int i=0;i<len;i++){
+		string strTOKEN;
+	    
+		//去除系列中 多余的空格
+		while (realT[i] == ' '){
+			i++;
+		}
+	    
+		//查询保留字 与 标识符
+		if (isalpha(realT[i])){
+			while (isalnum(realT[i])){
+				strTOKEN += realT[i];
+				i++;
+			}
+			i--;
+			if (retrcat(strTOKEN)){
+				string int_temp;
+				int_temp += "($";
+				int_temp += strTOKEN;
+				int_temp += ",-)";
+				rev_table.push_back(int_temp);
+				cout<<"($"<<strTOKEN<<","<<"-"<<")"<<endl;
+			}
+			else{
+				string int_temp;
+				int_temp += "($ID,";
+				int_temp += strTOKEN;
+                int_temp += ")";
+				cout<<"($ID,"<<strTOKEN<<")"<<endl;
+				int_table.push_back(int_temp);
+			}
+		}
+		
+		//查询数字常量（数）
+		else if (isdigit(realT[i])){
+			while (isdigit(realT[i])){
+				strTOKEN += realT[i];
+				i++;
+			} 
+			if (realT[i] == '.'){
+				strTOKEN += realT[i];
+				i++;
+				while (isdigit(realT[i])){
+				    strTOKEN += realT[i];
+				    i++;
+			    } 
+				string int_temp;
+			    int_temp += "($FLOAT,";
+				int_temp += strTOKEN;
+				int_temp += ")";
+				num_table.push_back(int_temp);
+				cout<<"($FLOAT,"<<strTOKEN<<")"<<endl;
+			}
+			else{
+			    string int_temp;
+			    int_temp += "($INT,";
+                int_temp += strTOKEN;
+                int_temp += ")";
+			    num_table.push_back(int_temp);
+			    cout<<"($INT,"<<strTOKEN<<")"<<endl;
+			}
+		}
+
+		//查询字符串常量(字符串）
+		else if(realT[i] == '"'){
+			i++;
+			while (realT[i] != '"'){
+				strTOKEN += realT[i];
+				i++;
+			}
+			strTOKEN += realT[i];
+			string int_temp;
+			int_temp += "($STR,";
+			int_temp += '"';
+            int_temp += strTOKEN;
+            int_temp += ")";
+			num_table.push_back(int_temp);
+			cout<<"($STR,"<<'"'<<strTOKEN<<")"<<endl;
+		}
+
+
+		//查询运算符
+		else if (realT[i] == '='){
+			strTOKEN += realT[i];
+			cal_table.push_back("($ASSIGN,-)");
+			cout<<"($ASSIGN,-)"<<endl;
+		}
+		else if (realT[i] == '+'){
+			strTOKEN += realT[i];
+			cal_table.push_back("($PLUS,-)");
+			cout<<"($PLUS,-)"<<endl;
+		}
+		else if (realT[i] == '*'){
+			strTOKEN += realT[i];
+			i++;
+			if (realT[i] == '*'){
+				cal_table.push_back("($POWER,-)");
+				cout<<"($POWER,-)"<<endl;
+			}
+			else {
+				i--;
+				cal_table.push_back("($MUL,-)");
+				cout<<"($MUL,-)"<<endl;
+			}
+		}
+
+
+		//查询分隔符
+        else if (realT[i] == ','){
+			strTOKEN += realT[i];
+			div_table.push_back("($COMMA,-)");
+			cout<<"($COMMA,-)"<<endl;
+		}
+		else if (realT[i] == '('){
+			strTOKEN += realT[i];
+			div_table.push_back("($LPAR,-)");
+			cout<<"($LPAR,-)"<<endl;
+		}
+		else if (realT[i] == '<'){
+			strTOKEN += realT[i];
+			i++;
+			if (realT[i] == '<'){
+				cal_table.push_back("($LP,-)");
+				cout<<"($LP,-)"<<endl;
+			}
+			else{
+				i--;
+			    div_table.push_back("($LT,-)");
+			    cout<<"($LT,-)"<<endl;
+			}
+		}
+		else if (realT[i] == '>'){
+			strTOKEN += realT[i];
+			i++;
+			if (realT[i] == '>'){
+				cal_table.push_back("($RP,-)");
+				cout<<"($RP,-)"<<endl;
+			}
+			else{
+				i--;
+			    div_table.push_back("($RT,-)");
+			    cout<<"($RT,-)"<<endl;
+			}
+		}
+		else if (realT[i] == '#'){
+			strTOKEN += realT[i];
+			div_table.push_back("($PAND,-)");
+			cout<<"($PAND,-)"<<endl;
+		}
+		else if (realT[i] == ')'){
+			strTOKEN += realT[i];
+			div_table.push_back("($RPAR,-)");
+			cout<<"($RPAR,-)"<<endl;
+		}
+		else if (realT[i] == ';'){
+			strTOKEN += realT[i];
+			div_table.push_back("($SEMI,-)");
+			cout<<"($SEMI,-)"<<endl;
+		}
+		else if (realT[i] == '{'){
+			strTOKEN += realT[i];
+			div_table.push_back("($LCB,-)");
+			cout<<"($LCB,-)"<<endl;
+		}
+		else if (realT[i] == '}'){
+			strTOKEN += realT[i];
+			div_table.push_back("($RCB,-)");
+			cout<<"($RCB,-)"<<endl;
+		}
+		
+		//错误处理
+		else{
+			cout<<"($ERROR,"<<realT[i]<<")"<<endl;
+		}
+	}
+
+	
+	cout<<"---------------------"<<endl;
+	cout<<"---------------------"<<endl;
+	cout<<"---------------------"<<endl;
+	
+
+	cout<<"标识符表"<<endl;
+	for (string str : int_table) {
+         cout<<str<<" ";
+    }
+	cout<<endl;
+	cout<<"常量表"<<endl;
+	for (string str : num_table) {
+         cout<<str<<" ";
+    }
+	cout<<endl;
+	cout<<"运算符表"<<endl;
+	for (string str : cal_table) {
+         cout<<str<<" ";
+    }
+	cout<<endl;
+	cout<<"分隔符表"<<endl;
+	for (string str : div_table) {
+         cout<<str<<" ";
+    }
+	cout<<endl;
+	cout<<"保留字表"<<endl;
+	for (string str : rev_table) {
+         cout<<str<<" ";
+    }
+	cout<<endl;
+	
+	
+	
+	system("pause");
+}
+
