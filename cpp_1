@@ -2,6 +2,7 @@
 #include <string>
 #include <set>
 #include <vector>
+#include <fstream>
 using namespace std;
 
 vector<string> int_table;//标识符表
@@ -17,7 +18,6 @@ string reserve[]={
 	"switch", "case", "default","break", "continue", "return", "goto","new", "delete",
 	"sizeof","class", "struct", "enum", "union", "typedef","this", "friend", "irtual", "mutable", "explicit", "operator",
 	"private", "protected", "public","template", "typename","namespace","using","catch", "throw", "try", "export", "typeid", "volatile"
-
 };
 
 
@@ -35,6 +35,7 @@ bool retrcat(string str){
 string pre(){
 	//编译预处理
 	FILE *fp;
+	//原程序txt文件
 	fp=fopen("C:\\Users\\86138\\Desktop\\abc.txt","r");
 	string preword;
 	while(!feof(fp))
@@ -57,6 +58,12 @@ void main(){
 	//编译预处理
     realT=pre();
 	int len = realT.length();
+	
+	//记录输出
+	ofstream outfile;
+	//分析结果输出文件txt
+	outfile.open("C:\\Users\\86138\\Desktop\\outfile.txt");
+	outfile<<"<!-----开始词法分析------->"<<endl;
 
 	//<!-----开始词法分析------->
 	for (int i=0;i<len;i++){
@@ -81,14 +88,16 @@ void main(){
 				int_temp += ",-)";
 				rev_table.push_back(int_temp);
 				cout<<"($"<<strTOKEN<<","<<"-"<<")"<<endl;
+				outfile<<"($"<<strTOKEN<<","<<"-"<<")"<<endl;
 			}
 			else{
 				string int_temp;
 				int_temp += "($ID,";
 				int_temp += strTOKEN;
                 int_temp += ")";
-				cout<<"($ID,"<<strTOKEN<<")"<<endl;
 				int_table.push_back(int_temp);
+				cout<<"($ID,"<<strTOKEN<<")"<<endl;
+				outfile<<"($ID,"<<strTOKEN<<")"<<endl;
 			}
 		}
 		
@@ -111,6 +120,7 @@ void main(){
 				int_temp += ")";
 				num_table.push_back(int_temp);
 				cout<<"($FLOAT,"<<strTOKEN<<")"<<endl;
+				outfile<<"($FLOAT,"<<strTOKEN<<")"<<endl;
 			}
 			else{
 			    string int_temp;
@@ -119,6 +129,7 @@ void main(){
                 int_temp += ")";
 			    num_table.push_back(int_temp);
 			    cout<<"($INT,"<<strTOKEN<<")"<<endl;
+				outfile<<"($INT,"<<strTOKEN<<")"<<endl;
 			}
 		}
 
@@ -137,19 +148,37 @@ void main(){
             int_temp += ")";
 			num_table.push_back(int_temp);
 			cout<<"($STR,"<<'"'<<strTOKEN<<")"<<endl;
+			outfile<<"($STR,"<<'"'<<strTOKEN<<")"<<endl;
 		}
 
 
 		//查询运算符
 		else if (realT[i] == '='){
 			strTOKEN += realT[i];
-			cal_table.push_back("($ASSIGN,-)");
-			cout<<"($ASSIGN,-)"<<endl;
+			i++;
+			if (realT[i] == '='){
+				cal_table.push_back("($EQUAL,-)");
+				cout<<"($EQUAL,-)"<<endl;
+				outfile<<"($EQUAL,-)"<<endl;
+			}
+			else {
+				i--;
+				cal_table.push_back("($ASSIGN,-)");
+				cout<<"($ASSIGN,-)"<<endl;
+				outfile<<"($ASSIGN,-)"<<endl;
+			}
 		}
 		else if (realT[i] == '+'){
 			strTOKEN += realT[i];
 			cal_table.push_back("($PLUS,-)");
 			cout<<"($PLUS,-)"<<endl;
+			outfile<<"($PLUS,-)"<<endl;
+		}
+		else if (realT[i] == '-'){
+			strTOKEN += realT[i];
+			cal_table.push_back("($MINUS,-)");
+			cout<<"($MINUS,-)"<<endl;
+			outfile<<"($MINUS,-)"<<endl;
 		}
 		else if (realT[i] == '*'){
 			strTOKEN += realT[i];
@@ -157,25 +186,34 @@ void main(){
 			if (realT[i] == '*'){
 				cal_table.push_back("($POWER,-)");
 				cout<<"($POWER,-)"<<endl;
+				outfile<<"($POWER,-)"<<endl;
 			}
 			else {
 				i--;
 				cal_table.push_back("($MUL,-)");
 				cout<<"($MUL,-)"<<endl;
+				outfile<<"($MUL,-)"<<endl;
 			}
 		}
-
+		else if (realT[i] == '/'){
+			strTOKEN += realT[i];
+			cal_table.push_back("($DIV,-)");
+			cout<<"($DIV,-)"<<endl;
+			outfile<<"($DIV,-)"<<endl;
+		}
 
 		//查询分隔符
         else if (realT[i] == ','){
 			strTOKEN += realT[i];
 			div_table.push_back("($COMMA,-)");
 			cout<<"($COMMA,-)"<<endl;
+			outfile<<"($COMMA,-)"<<endl;
 		}
 		else if (realT[i] == '('){
 			strTOKEN += realT[i];
 			div_table.push_back("($LPAR,-)");
 			cout<<"($LPAR,-)"<<endl;
+			outfile<<"($LPAR,-)"<<endl;
 		}
 		else if (realT[i] == '<'){
 			strTOKEN += realT[i];
@@ -183,11 +221,13 @@ void main(){
 			if (realT[i] == '<'){
 				cal_table.push_back("($LP,-)");
 				cout<<"($LP,-)"<<endl;
+				outfile<<"($LP,-)"<<endl;
 			}
 			else{
 				i--;
 			    div_table.push_back("($LT,-)");
 			    cout<<"($LT,-)"<<endl;
+				outfile<<"($LT,-)"<<endl;
 			}
 		}
 		else if (realT[i] == '>'){
@@ -196,37 +236,44 @@ void main(){
 			if (realT[i] == '>'){
 				cal_table.push_back("($RP,-)");
 				cout<<"($RP,-)"<<endl;
+				outfile<<"($RP,-)"<<endl;
 			}
 			else{
 				i--;
 			    div_table.push_back("($RT,-)");
 			    cout<<"($RT,-)"<<endl;
+				outfile<<"($RT,-)"<<endl;
 			}
 		}
 		else if (realT[i] == '#'){
 			strTOKEN += realT[i];
 			div_table.push_back("($PAND,-)");
 			cout<<"($PAND,-)"<<endl;
+			outfile<<"($PAND,-)"<<endl;
 		}
 		else if (realT[i] == ')'){
 			strTOKEN += realT[i];
 			div_table.push_back("($RPAR,-)");
 			cout<<"($RPAR,-)"<<endl;
+			outfile<<"($RPAR,-)"<<endl;
 		}
 		else if (realT[i] == ';'){
 			strTOKEN += realT[i];
 			div_table.push_back("($SEMI,-)");
 			cout<<"($SEMI,-)"<<endl;
+			outfile<<"($SEMI,-)"<<endl;
 		}
 		else if (realT[i] == '{'){
 			strTOKEN += realT[i];
 			div_table.push_back("($LCB,-)");
 			cout<<"($LCB,-)"<<endl;
+			outfile<<"($LCB,-)"<<endl;
 		}
 		else if (realT[i] == '}'){
 			strTOKEN += realT[i];
 			div_table.push_back("($RCB,-)");
 			cout<<"($RCB,-)"<<endl;
+			outfile<<"($RCB,-)"<<endl;
 		}
 		
 		//错误处理
@@ -235,40 +282,57 @@ void main(){
 		}
 	}
 
-	
 	cout<<"---------------------"<<endl;
-	cout<<"---------------------"<<endl;
-	cout<<"---------------------"<<endl;
-	
 
+	outfile<<"<!-----词法分析扫描结束------->"<<endl<<endl;
+
+	outfile<<"<!-----标识符表------->"<<endl;
 	cout<<"标识符表"<<endl;
 	for (string str : int_table) {
          cout<<str<<" ";
+		 outfile<<str<<" ";
     }
 	cout<<endl;
+	outfile<<endl;
+	
+	outfile<<"<!-----常量表------->"<<endl;
 	cout<<"常量表"<<endl;
 	for (string str : num_table) {
          cout<<str<<" ";
+		 outfile<<str<<" ";
     }
 	cout<<endl;
+	outfile<<endl;
+	
+	outfile<<"<!-----运算符表------->"<<endl;
 	cout<<"运算符表"<<endl;
 	for (string str : cal_table) {
          cout<<str<<" ";
+		 outfile<<str<<" ";
     }
 	cout<<endl;
+	outfile<<endl;
+
+	outfile<<"<!-----分隔符表------->"<<endl;
 	cout<<"分隔符表"<<endl;
 	for (string str : div_table) {
          cout<<str<<" ";
+		 outfile<<str<<" ";
     }
 	cout<<endl;
+	outfile<<endl;
+
+	outfile<<"<!-----保留字表------->"<<endl;
 	cout<<"保留字表"<<endl;
 	for (string str : rev_table) {
          cout<<str<<" ";
+		 outfile<<str<<" ";
     }
 	cout<<endl;
+	outfile<<endl;
 	
 	
-	
+	outfile.close();
 	system("pause");
 }
 
